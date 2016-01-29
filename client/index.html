@@ -1,0 +1,126 @@
+<html>
+<head>
+	<title> Orders and Customers </title>
+	  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.5/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.5/angular-route.min.js"></script>
+	<script>
+
+		var myApp = angular.module('myApp',['ngRoute']);
+		myApp.config(function ($routeProvider) {
+     	 $routeProvider
+        .when('/',{
+            templateUrl: 'partials/customers.html'
+        })
+        .when('/orders',{
+            templateUrl: 'partials/orders.html'
+        })
+        .otherwise({
+          redirectTo: '/'
+        });
+    });
+		myApp.factory('customerFactory', function($http){
+			var customers = [];
+			var factory = {};
+			factory.getCustomers = function(cb){
+				$http.get('/customers').success(function(output){
+					cb(output);
+				})
+			}
+			factory.addCustomers = function(info, cb){
+				$http.post('/customers', info).success(function(){
+					cb();
+				})
+		  }
+			factory.deleteCustomers = function(customer, cb){
+				console.log("deleting customer", customer);
+				$http.delete('/customers/'+ customer._id).success(function(){
+					cb();
+				})
+			}
+			return factory;
+		});
+
+		myApp.factory('ordersFactory', function($http){
+			var orders = [];
+			var factory = {};
+			factory.getOrders = function(cb){
+				console.log("getting orders");
+				$http.get('/orders').success(function(output){
+					cb(output);
+				})
+			}
+			factory.addOrders = function(info, cb){
+				console.log("in orders factory");
+				$http.post('/orders', info).success(function(){
+					cb();
+				})
+		  }
+			factory.deleteOrders = function(order, cb){
+				console.log("deleting order", order);
+				$http.delete('/orders/'+ order._id).success(function(){
+					cb();
+				})
+			}
+			return factory;
+		});
+
+		myApp.controller('customersController', function($scope, customerFactory){
+			customerFactory.getCustomers(function(data){
+				$scope.customers = data;
+			});
+			$scope.addCustomers = function(){
+				console.log($scope.newCustomer)
+				customerFactory.addCustomers($scope.newCustomer, function(){
+					customerFactory.getCustomers(function(data){
+						$scope.customers = data;
+						$scope.newCustomer = {};
+					});
+				});
+			}
+			$scope.deleteCustomers = function(customer){
+				console.log("deleting " +customer);
+				customerFactory.deleteCustomers(customer, function(){
+					customerFactory.getCustomers(function(data){
+						$scope.customers = data;
+					});
+				})
+			}
+		})
+
+		myApp.controller('ordersController', function($scope,ordersFactory, customerFactory){
+			ordersFactory.getOrders(function(data){
+				$scope.orders = data;
+			});
+			customerFactory.getCustomers(function(data){
+				$scope.customers = data;
+			});
+			$scope.addOrders = function(){
+				console.log("adding new order in orderscontroller" + $scope.newOrder);
+				ordersFactory.addOrders($scope.newOrder, function(){
+					ordersFactory.getOrders(function(data){
+						$scope.orders = data;
+						$scope.newOrder = {};
+					});
+				});
+			}
+			$scope.deleteOrders = function(order){
+				console.log("deleting" + order);
+				ordersFactory.deleteOrders(order, function(){
+					ordersFactory.getOrders(function(data){
+						$scope.orders = data;
+					});
+				})
+			}
+		})
+	</script>
+</head>
+<body>
+	<div class="container">
+		<div ng-app='myApp'>
+		<a href="#/customers">Customers </a> | <a href="#/orders">Orders</a>
+			<div ng-view="">
+			</div>
+		</div>
+	</div>
+</body>
+</html>
